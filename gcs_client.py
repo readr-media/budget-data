@@ -68,21 +68,29 @@ class GCSClient:
         # Add prefix to filename
         blob_name = f"{self.output_prefix}/{filename}"
         
-        logger.info(f"Uploading to gs://{self.bucket_name}/{blob_name}")
+        logger.info(f"Starting upload to gs://{self.bucket_name}/{blob_name}")
         
-        # Create blob
-        blob = self.bucket.blob(blob_name)
-        
-        # Upload JSON data
-        json_string = json.dumps(data, ensure_ascii=False, indent=2)
-        blob.upload_from_string(
-            json_string,
-            content_type=content_type
-        )
-        
-        logger.info(f"Upload complete: gs://{self.bucket_name}/{blob_name}")
-        
-        return f"gs://{self.bucket_name}/{blob_name}"
+        try:
+            # Create blob
+            blob = self.bucket.blob(blob_name)
+            
+            # Serialize JSON data
+            json_string = json.dumps(data, ensure_ascii=False, indent=2)
+            data_size = len(json_string.encode('utf-8'))
+            logger.info(f"Serialized JSON size: {data_size} bytes")
+            
+            # Upload JSON data
+            blob.upload_from_string(
+                json_string,
+                content_type=content_type
+            )
+            
+            logger.info(f"Upload complete: gs://{self.bucket_name}/{blob_name}")
+            return f"gs://{self.bucket_name}/{blob_name}"
+            
+        except Exception as e:
+            logger.error(f"Failed to upload to GCS: {str(e)}", exc_info=True)
+            raise Exception(f"GCS Upload failed: {str(e)}")
     
     def upload_statistics(self, stats_type: str, data: Any) -> str:
         """
