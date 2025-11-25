@@ -61,8 +61,9 @@ API_TIMEOUT=30
 API_MAX_RETRIES=3
 
 # GCS Settings (for uploading JSON files)
+# Uses default credentials (e.g., Cloud Run service account)
 GCS_BUCKET_NAME=your-bucket-name
-GCS_CREDENTIALS_PATH=/path/to/your/service-account-key.json
+# GCS_OUTPUT_PREFIX: Path prefix (e.g., "budget-statistics", "data/stats/2024", or empty for root)
 GCS_OUTPUT_PREFIX=budget-statistics
 ```
 

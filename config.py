@@ -24,8 +24,7 @@ class Settings(BaseSettings):
     
     # GCS Settings
     gcs_bucket_name: Optional[str] = None
-    gcs_credentials_path: Optional[str] = None
-    gcs_output_prefix: str = "budget-statistics"  # Prefix for uploaded files
+    gcs_output_prefix: str = ""  # Path prefix for uploaded files (e.g., "budget-statistics" or "data/statistics/2024")
 
 
 # Global settings instance

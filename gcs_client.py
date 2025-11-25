@@ -19,17 +19,9 @@ class GCSClient:
     
     def __init__(self):
         self.bucket_name = settings.gcs_bucket_name
-        self.credentials_path = settings.gcs_credentials_path
         self.output_prefix = settings.gcs_output_prefix
         
         logger.info(f"Initializing GCS Client. Bucket: {self.bucket_name}, Prefix: {self.output_prefix}")
-        
-        # Set credentials if provided
-        if self.credentials_path and os.path.exists(self.credentials_path):
-            logger.info(f"Using credentials from: {self.credentials_path}")
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.credentials_path
-        else:
-            logger.info("No credentials path provided or file not found. Using default credentials.")
         
         self.client = None
         self.bucket = None
@@ -74,8 +66,11 @@ class GCSClient:
             logger.error("Attempted upload but GCS bucket not configured")
             raise Exception("GCS bucket not configured. Please set GCS_BUCKET_NAME environment variable.")
         
-        # Add prefix to filename
-        blob_name = f"{self.output_prefix}/{filename}"
+        # Add prefix to filename (if prefix is set)
+        if self.output_prefix:
+            blob_name = f"{self.output_prefix.rstrip('/')}/{filename}"
+        else:
+            blob_name = filename
         
         logger.info(f"Starting upload to gs://{self.bucket_name}/{blob_name}")
         
