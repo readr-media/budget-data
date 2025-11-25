@@ -123,7 +123,7 @@ async def get_statistics_by_department(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.post("/api/upload/by-legislator")
+@app.get("/api/upload/by-legislator")
 async def upload_statistics_by_legislator(
     year: Optional[int] = Query(None, description="Filter by specific budget year"),
     use_latest: bool = Query(True, description="Use 'latest' filename instead of timestamp")
@@ -180,7 +180,7 @@ async def upload_statistics_by_legislator(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.post("/api/upload/by-department")
+@app.get("/api/upload/by-department")
 async def upload_statistics_by_department(
     year: Optional[int] = Query(None, description="Filter by specific budget year"),
     use_latest: bool = Query(True, description="Use 'latest' filename instead of timestamp")
