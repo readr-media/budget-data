@@ -1,0 +1,32 @@
+steps:
+  # Debug: List files in the workspace
+  - name: 'ubuntu'
+    args: ['ls', '-la']
+
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/budget-data-api', '.']
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/budget-data-api']
+
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'budget-data-api'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/budget-data-api'
+      - '--region'
+      - 'asia-east1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'GRAPHQL_ENDPOINT=https://ly-budget-gql-dev-1075249966777.asia-east1.run.app/api/graphql'
+
+images:
+  - 'gcr.io/$PROJECT_ID/budget-data-api'
