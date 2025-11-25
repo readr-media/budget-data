@@ -44,9 +44,18 @@ class GCSClient:
         try:
             self.client = storage.Client()
             self.bucket = self.client.bucket(self.bucket_name)
-            logger.info(f"Successfully initialized GCS bucket: {self.bucket_name}")
+            
+            # Log project ID to verify credentials
+            logger.info(f"GCS Client initialized. Project ID: {self.client.project}")
+            
+            # Verify bucket existence/access
+            if self.bucket.exists():
+                logger.info(f"Successfully verified access to bucket: {self.bucket_name}")
+            else:
+                logger.error(f"Bucket {self.bucket_name} does not exist or access is denied.")
+                
         except Exception as e:
-            logger.error(f"Failed to initialize GCS client: {e}")
+            logger.error(f"Failed to initialize GCS client: {e}", exc_info=True)
             raise Exception(f"Failed to initialize GCS client: {e}")
     
     def upload_json(self, data: Any, filename: str, content_type: str = "application/json") -> str:
@@ -80,16 +89,24 @@ class GCSClient:
             logger.info(f"Serialized JSON size: {data_size} bytes")
             
             # Upload JSON data
+            logger.info(f"[{datetime.now()}] Beginning upload_from_string...")
             blob.upload_from_string(
                 json_string,
-                content_type=content_type
+                content_type=content_type,
+                timeout=60  # Explicit timeout for upload
             )
+            logger.info(f"[{datetime.now()}] upload_from_string completed.")
             
             logger.info(f"Upload complete: gs://{self.bucket_name}/{blob_name}")
             return f"gs://{self.bucket_name}/{blob_name}"
             
         except Exception as e:
             logger.error(f"Failed to upload to GCS: {str(e)}", exc_info=True)
+            # Check for common GCS errors
+            if "403" in str(e):
+                logger.error("Permission denied. Check service account permissions.")
+            elif "404" in str(e):
+                logger.error("Bucket or path not found.")
             raise Exception(f"GCS Upload failed: {str(e)}")
     
     def upload_statistics(self, stats_type: str, data: Any) -> str:
