@@ -8,6 +8,12 @@ from google.cloud import storage
 from config import settings
 
 
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
 class GCSClient:
     """Client for uploading files to Google Cloud Storage."""
     
@@ -16,22 +22,31 @@ class GCSClient:
         self.credentials_path = settings.gcs_credentials_path
         self.output_prefix = settings.gcs_output_prefix
         
+        logger.info(f"Initializing GCS Client. Bucket: {self.bucket_name}, Prefix: {self.output_prefix}")
+        
         # Set credentials if provided
         if self.credentials_path and os.path.exists(self.credentials_path):
+            logger.info(f"Using credentials from: {self.credentials_path}")
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.credentials_path
+        else:
+            logger.info("No credentials path provided or file not found. Using default credentials.")
         
         self.client = None
         self.bucket = None
         
         if self.bucket_name:
             self._initialize_client()
+        else:
+            logger.warning("GCS_BUCKET_NAME not set. Uploads will fail.")
     
     def _initialize_client(self):
         """Initialize GCS client and bucket."""
         try:
             self.client = storage.Client()
             self.bucket = self.client.bucket(self.bucket_name)
+            logger.info(f"Successfully initialized GCS bucket: {self.bucket_name}")
         except Exception as e:
+            logger.error(f"Failed to initialize GCS client: {e}")
             raise Exception(f"Failed to initialize GCS client: {e}")
     
     def upload_json(self, data: Any, filename: str, content_type: str = "application/json") -> str:
@@ -47,10 +62,13 @@ class GCSClient:
             Public URL of the uploaded file
         """
         if not self.bucket:
+            logger.error("Attempted upload but GCS bucket not configured")
             raise Exception("GCS bucket not configured. Please set GCS_BUCKET_NAME environment variable.")
         
         # Add prefix to filename
         blob_name = f"{self.output_prefix}/{filename}"
+        
+        logger.info(f"Uploading to gs://{self.bucket_name}/{blob_name}")
         
         # Create blob
         blob = self.bucket.blob(blob_name)
@@ -62,8 +80,7 @@ class GCSClient:
             content_type=content_type
         )
         
-        # Make the blob publicly accessible (optional)
-        # blob.make_public()
+        logger.info(f"Upload complete: gs://{self.bucket_name}/{blob_name}")
         
         return f"gs://{self.bucket_name}/{blob_name}"
     
