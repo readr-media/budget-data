@@ -195,9 +195,10 @@ async def upload_statistics_by_department(
     - use_latest: If true, uploads as 'by-department_latest.json', otherwise uses timestamp
     """
     try:
-        logger.info(f"Generating and uploading statistics by department (year={year})")
+        logger.info(f"Received request: POST /api/upload/by-department (year={year}, use_latest={use_latest})")
         
         # Fetch all required data
+        logger.info("Fetching data from GraphQL...")
         proposals = await graphql_client.fetch_proposals()
         budget_years = await graphql_client.fetch_budget_years()
         
@@ -205,12 +206,16 @@ async def upload_statistics_by_department(
         if year is not None:
             budget_years = [y for y in budget_years if y["year"] == year]
             if not budget_years:
+                logger.warning(f"Budget year {year} not found")
                 raise HTTPException(status_code=404, detail=f"Budget year {year} not found")
         
         # Generate statistics
+        logger.info("Generating statistics...")
         stats = generate_statistics_by_department(proposals, budget_years)
+        logger.info(f"Statistics generated. Count: {len(stats)} years")
         
         # Upload to GCS
+        logger.info("Initiating GCS upload...")
         if use_latest:
             gcs_path = gcs_client.upload_latest_statistics("by-department", stats)
         else:
