@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     bearer_token: Optional[str] = None
     
     # API Settings
-    api_timeout: int = 30
+    api_timeout: int = 60
     api_max_retries: int = 3
     
     # GCS Settings

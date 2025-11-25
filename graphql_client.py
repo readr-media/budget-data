@@ -26,9 +26,13 @@ class GraphQLClient:
     
     async def _execute_query(self, query: str, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Execute a GraphQL query with retry logic."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             for attempt in range(self.max_retries):
                 try:
+                    logger.info(f"Executing GraphQL query (attempt {attempt + 1}/{self.max_retries}). Endpoint: {self.endpoint}")
                     response = await client.post(
                         self.endpoint,
                         json={"query": query, "variables": variables or {}},
@@ -38,14 +42,20 @@ class GraphQLClient:
                     data = response.json()
                     
                     if "errors" in data:
+                        logger.error(f"GraphQL returned errors: {data['errors']}")
                         raise Exception(f"GraphQL errors: {data['errors']}")
                     
                     return data.get("data", {})
                     
                 except httpx.HTTPError as e:
+                    logger.warning(f"GraphQL query attempt {attempt + 1} failed: {type(e).__name__}: {str(e)}")
                     if attempt == self.max_retries - 1:
-                        raise Exception(f"Failed to execute GraphQL query after {self.max_retries} attempts: {e}")
+                        logger.error(f"All {self.max_retries} attempts failed. Final error: {str(e)}")
+                        raise Exception(f"Failed to execute GraphQL query after {self.max_retries} attempts. Error type: {type(e).__name__}. Details: {str(e)}")
                     continue
+                except Exception as e:
+                    logger.error(f"Unexpected error during GraphQL query: {type(e).__name__}: {str(e)}")
+                    raise
     
     async def fetch_proposals(self, year_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
